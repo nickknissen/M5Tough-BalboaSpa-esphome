@@ -75,7 +75,7 @@ climate:
     id: spa_thermostat
     visual:
       min_temperature: 15 °C
-      max_temperature: 30 °C  
+      max_temperature: 40 °C
       temperature_step: 0.5 °C
 
 # Switches for spa controls with debouncing
