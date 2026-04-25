@@ -40,8 +40,8 @@ ota:
 # OPTIMIZED UART configuration for better CRC handling
 uart:
   id: spa_uart_bus
-  tx_pin: GPIO32  # Grove Port A TX pin
-  rx_pin: GPIO33  # Grove Port A RX pin
+  tx_pin: GPIO14 # Extension UART slot TX → RS485 Unit DI
+  rx_pin: GPIO13 # Extension UART slot RX ← RS485 Unit RO
   baud_rate: 115200
   data_bits: 8
   parity: NONE
