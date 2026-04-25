@@ -1,291 +1,198 @@
 # 🌊 M5Tough Balboa Spa Monitor
 
-An ESP32-based project for monitoring Balboa spa systems using the M5Tough device with RS485 communication. This project is built on ESPHome and provides real-time spa monitoring capabilities.
+An ESPHome project that turns an M5Stack M5Tough into a Home Assistant–integrated monitor and controller for Balboa BP-series spa systems, talking to the spa's main panel bus over RS-485.
 
 ![M5Tough Balboa Spa Wiring](documentation/hw-setup-final.png)
 
-
 ## 🛠️ Required Components
 
-To build this Balboa spa monitoring system, you'll need the following hardware components:
+### 💻 Core hardware
 
-### 💻 Core Hardware
-- **[M5Stack Tough ESP32 IoT Development Board Kit](https://shop.m5stack.com/products/m5stack-tough-esp32-iot-development-board-kit?variant=40644956160172)** - The main ESP32 controller with integrated 2.4" TFT display and touch screen
-- **[RS485 Module](https://shop.m5stack.com/products/rs485-module)** - M5Stack RS485 communication module for Grove Port A connection
+- **[M5Stack Tough ESP32 IoT Development Board](https://shop.m5stack.com/products/m5stack-tough-esp32-iot-development-board-kit?variant=40644956160172)** — main controller (ESP32, 2.4" TFT + touch).
+- **[M5Tough Extension Board](https://shop.m5stack.com/products/m5tough-ext-board)** — adds four labeled HY2.0-4P (Grove) slots: GPIO, UART, I²C, RS485. We use the **UART** slot.
+- **[M5Stack RS485 Unit (U034)](https://docs.m5stack.com/en/unit/rs485)** — Grove TTL ↔ RS-485 transceiver (SP485EEN, auto-direction). Plug into the Extension Board's **UART** slot.
+- **4-pin cable** to splice into the spa's J34 / J35 main panel port. Any 4-conductor cable terminated in a Molex 43025-0400 (TE 794617-4) works; many builders just buy a Balboa main-panel extension cable and cut it.
 
-### 🔌 Cable Connection
-- **[CY ATX Molex Micro Fit Grid 3.0 mm 4-Pin Male Cable](https://www.amazon.de/gp/product/B07Z7X5KW1)** Cable for connecting the RS485 module to your Balboa spa's RS485 communication lines
+> ⚠️ **Power:** the M5Tough is powered from the spa's J34 +12V / GND pins via the RS485 Unit's VIN terminal. **No USB power needed in normal operation.** All four wires (12V, GND, A, B) go from J34 to the U034.
 
-⚠️ **ATTENTION**: We will not use USB to power the M5Tough! Instead, we use the 12V and GND from the Balboa spa system via the RS485 Unit to power the M5Stack. All 4 wires are required (12V, GND, A+, B-). Exact pinout can be found in the referenced ESPHome Balboa projects.
+### 🛁 Spa side
 
-### ➕ Additional Requirements
-- **Balboa Spa System** - Compatible spa system with accessible RS485 communication port
-- **Network Connection** - WiFi network for MQTT and web interface connectivity
+- A Balboa **BP-series controller** with a spare main panel port. This build is verified on **BP6013G1** (BP21 platform, software M100_226 V65.0); wiring/protocol is shared across the BP21 family.
+- The panel bus is RS-485 at **115200 8-N-1**.
+- **Do not** disconnect the topside panel — tap into J34 or J35 (whichever is unused). Both are interchangeable MAIN ports on the same RS-485 bus. AUX panels live on J5 / J8 (separate bus, do not use).
+- Network connection (Wi-Fi) for Home Assistant and OTA updates.
 
-## 📊 Baseline and Current Status
+## ⚙️ Hardware configuration
 
-This project is based on excellent reference projects adapted specifically for the M5Tough ESP32 platform:
+### Spa connector pinout (J34 / J35)
 
-- **[ESPHome Balboa Spa (Dakoriki)](https://github.com/Dakoriki/ESPHome-Balboa-Spa)** - Original ESPHome Balboa spa integration
-- **[ESPHome Balboa Spa (brianfeucht)](https://github.com/brianfeucht/ESPHome-Balboa-Spa)** - Enhanced implementation with additional features
-- **[ESPHome Balboa Spa (mhetzi)](https://github.com/mhetzi/esphome-balboa-spa)** - Most current and actively maintained version
-
-### ✅ Currently Implemented
-- ✅ **Real-time Spa Monitoring**: Temperature, jets, lights, heater, and filter status
-- ✅ **Web Interface**: ESPHome web interface accessible from any device
-- ✅ **RS485 Communication**: Direct communication with Balboa spa control systems via Grove Port A
-- ✅ **ESPHome Integration**: Native ESPHome platform with optimized performance
-- ✅ **MQTT Integration**: Full MQTT broker connectivity with Last Will Testament (LWT) messages
-- ✅ **Home Automation Controls**: Control spa functions via MQTT commands
-- ✅ **Status Monitoring**: Real-time status updates via MQTT topics
-- ✅ **Stability**: Auto-restart configuration for improved device stability
-
-### 📋 Todo List
-- ⬜ **Touch Screen Display**: M5Tough TFT display output for local spa status and controls
-- ⬜ **Enhanced UI**: Custom touch interface for the M5Tough display
-- ⬜ **Home Assistant Discovery**: Auto-discovery integration (currently disabled for manual MQTT setup)
-
-## 🔧 Hardware Requirements
-
-- **M5Tough ESP32 Device**: ESP32-based development board with integrated TFT display and touch screen
-- **RS485 Unit**: Connected to Grove Port A for spa communication
-- **Balboa Spa System**: Compatible spa system with RS485 communication support
-
-## ⚙️ Hardware Configuration
-
-### M5Tough ESP32 Platform
-- **Base**: ESP32 microcontroller with WiFi capability
-- **Display**: 2.4" TFT LCD with touch screen (currently unused - on todo list)
-- **Connectivity**: Grove ports for easy sensor/module connection
-
-### RS485 Connection via Grove Port A
-- **Grove Port A**: Used for RS485 Unit connection
-- **TX Pin**: GPIO 32 (connected to RS485 Unit TX)
-- **RX Pin**: GPIO 33 (connected to RS485 Unit RX)
-- **RS485 Lines**: Connect A/B differential pair to your Balboa spa system
-
-## 📡 Protocol Implementation
-
-This project uses the ESPHome Balboa component for communication protocol handling:
-
-- Status message parsing and control commands
-- Temperature monitoring and thermostat control
-- Pump, jet, and accessory status and control
-- Connection monitoring and error handling
-- Optimized UART communication to reduce CRC errors
-
-## 📁 Project Structure
+4-pin Molex 43025-0400 (TE 794617-4). Looking at the connector with the **clip facing up**:
 
 ```
-├── esphome-m5tough-balboa-spa.yaml    # Main ESPHome configuration
-├── secrets.yaml                       # WiFi and sensitive configuration  
-├── secrets_template.yaml              # Template for new installations
-└── README.md                          # This documentation
+   ┌─────────┐
+   │ 4   3   │   ← top row
+   │ 2   1   │   ← bottom row
+   └─────────┘
+       │
+       clip (key) on this side
 ```
 
-## 🚀 Getting Started
+| Pin | Signal             | Voltage to GND | Goes to U034 terminal |
+|----:|--------------------|----------------|-----------------------|
+|   1 | **+12–15 VDC**     | ~12–15 V       | VIN                   |
+|   2 | **RS-485 B (D+)**  | ~2–3 V         | B                     |
+|   3 | **RS-485 A (D−)**  | ~2–3 V         | A                     |
+|   4 | **GND / Return**   | 0 V            | GND                   |
 
-### 📋 Prerequisites
-- ESPHome installed (`pip install esphome`)
-- M5Tough device with RS485 Unit on Grove Port A
-- Access to Balboa spa RS485 communication lines
+#### Wire colors are not standardized — verify with a multimeter
 
-### 🔧 Initial Setup
+Cable colors vary by manufacturer and year. Two real-world cables encountered for the same connector have *inverted* color codes:
 
-1. **Configure Secrets**: Copy `secrets_template.yaml` to `secrets.yaml` and configure your WiFi settings
-2. **Compile**: `esphome compile esphome-m5tough-balboa-spa.yaml`
-3. **First Upload**: Connect M5Tough via USB and upload initial firmware
-4. **OTA Updates**: After initial setup, use OTA for subsequent updates
+| Pin | Function | Cable A (community writeup) | Cable B (this build)  |
+|----:|----------|-----------------------------|-----------------------|
+|   1 | +12V     | yellow                      | red                   |
+|   2 | B        | black w/ purple tape        | black                 |
+|   3 | A        | black                       | white                 |
+|   4 | GND      | red                         | yellow                |
 
-## 🔨 Building and Uploading
+Identify pins by **physical position relative to the clip**, or **verify with a multimeter** (12V on power, 0V on GND, ~2-3V on A and B). Color-only mapping has misled multiple builders.
 
-### Using ESPHome
+### M5 RS485 Unit (U034) connections
 
-```bash
-# Compile the configuration
-esphome compile esphome-m5tough-balboa-spa.yaml
+- Chip: **SP485EEN** — half-duplex with auto-direction control. No DE/RE GPIO required.
+- Grove HY2.0-4P input from the Extension Board (yellow=UART_RX, white=UART_TX, red=5V, black=GND).
+- 4-position screw terminal block to the spa: **B, A, GND, VIN** (12-24V power input).
+- Onboard 120Ω termination.
 
-# Upload to M5Tough device via USB (first time)
-esphome upload esphome-m5tough-balboa-spa.yaml
+Tying GND between U034 and the spa is required as a common reference. If A/B end up reversed at the spa connector, the symptom is *garbled bytes / CRC errors* — swap A↔B at the U034 terminals.
 
-# Upload via OTA (after initial setup - replace with your device's IP)
-esphome upload esphome-m5tough-balboa-spa.yaml --device 192.168.1.xxx
+### M5Tough Extension Board slot map
 
-# Monitor logs
-esphome logs esphome-m5tough-balboa-spa.yaml --device 192.168.1.xxx
-```
+The Extension Board exposes four HY2.0-4P (Grove) ports. Per its schematic, each routes the Grove pins to different ESP32 GPIOs:
 
-## ⚙️ Configuration
+| Slot       | Pin 2 (Yellow)  | Pin 3 (White)            | Notes                                              |
+|------------|-----------------|--------------------------|----------------------------------------------------|
+| GPIO       | GPIO 26 (out)   | **GPIO 36 (input-only!)** | TX cannot drive — won't work as UART output       |
+| **UART**   | **GPIO 14 (TX)** | **GPIO 13 (RX)**        | **Use this for the U034**                          |
+| I²C        | GPIO 32 (SDA)   | GPIO 33 (SCL)            | I²C only                                           |
+| RS485      | B− (differential) | A+ (differential)      | Onboard SP485EEN — bypasses the U034 if used; differential output only, not for the U034 Grove cable |
 
-The main configuration is in `esphome-m5tough-balboa-spa.yaml`. Key settings:
+The corresponding ESPHome UART block:
 
-- **WiFi**: Configure in `secrets.yaml`
-- **RS485**: Uses UART with TX=GPIO32, RX=GPIO33 (Grove Port A)
-- **Display**: M5Tough TFT display (todo - not yet implemented)
-- **Sensors**: Temperature sensors with ESPHome Balboa component
-- **Climate**: Thermostat control for spa temperature
-- **MQTT**: Full MQTT integration with configurable broker, authentication, and LWT messages
-
-## 🌐 Current Functionality
-
-### 🌐 Web Interface Access
-Once uploaded, access the spa controls via:
-1. **ESPHome Web Interface**: Navigate to your device's IP address in a browser
-2. **MQTT Control**: Send commands via MQTT topics for automation
-3. **Home Automation**: Integrate with any MQTT-compatible system
-
-### 📡 MQTT Control Topics
-
-The system uses MQTT for real-time control and monitoring:
-
-#### 📤 Control Commands (Publish to these topics):
-```bash
-# Light Control
-home/m5tough-balboa-spa/switch/spa_light/command
-# Payloads: "ON" or "OFF"
-
-# Jet 1 Control  
-home/m5tough-balboa-spa/switch/spa_jet_1/command
-# Payloads: "ON" or "OFF"
-
-# Jet 2 Control
-home/m5tough-balboa-spa/switch/spa_jet_2/command  
-# Payloads: "ON" or "OFF"
-
-# Temperature Control
-home/m5tough-balboa-spa/climate/spa_thermostat/command
-# Payloads: JSON format for temperature setting
-```
-
-#### 📊 Status Monitoring (Subscribe to these topics):
-```bash
-# Device Status (LWT)
-home/m5tough-balboa-spa/LWT
-# Payloads: "online" or "offline"
-
-# Temperature Readings
-home/m5tough-balboa-spa/sensor/spa_current_temperature/state
-home/m5tough-balboa-spa/sensor/spa_target_temperature/state
-
-# Switch States
-home/m5tough-balboa-spa/switch/spa_light/state
-home/m5tough-balboa-spa/switch/spa_jet_1/state
-home/m5tough-balboa-spa/switch/spa_jet_2/state
-```
-
-### 🎛️ Available Controls
-The system currently monitors and controls:
-- **Temperature**: Current and target temperature readings via MQTT
-- **Climate Control**: Heat mode (Off/Heat/Rest/Ready) via MQTT and web interface
-- **Jets**: Jet 1 and Jet 2 on/off control via MQTT commands
-- **Light**: Spa light on/off control via MQTT commands
-- **Heater**: Heater operation status monitoring
-- **Filter**: Filter pump operation status
-- **Connection**: Real-time RS485 and MQTT connection status with LWT
-
-## 📡 MQTT Configuration
-
-### 🔌 Broker Setup
-Configure your MQTT broker details in `secrets.yaml`:
 ```yaml
-mqtt_broker: "your_mqtt_broker_ip"
-mqtt_port: 1883
-mqtt_username: "your_mqtt_username" 
-mqtt_password: "your_mqtt_password"
+uart:
+  id: spa_uart_bus
+  tx_pin: GPIO14
+  rx_pin: GPIO13
+  baud_rate: 115200
+  data_bits: 8
+  parity: NONE
+  stop_bits: 1
+  rx_buffer_size: 1024
 ```
 
-### ✨ Features Implemented
-- **Last Will Testament (LWT)**: Device reports "online"/"offline" status
-- **Retained Messages**: Status persists on broker for new subscribers
-- **Custom Topic Prefix**: `home/m5tough-balboa-spa/` for organized MQTT namespace
-- **Quality of Service**: Reliable message delivery
-- **Authentication**: Username/password authentication support
+## 📊 Current status
 
-## 🚀 Future Enhancements (Todo)
+### ✅ Implemented
 
-### 📱 M5Tough Display Integration
-- ⬜ Custom ESPHome display component for the M5Tough TFT screen
-- ⬜ Touch screen interface for local spa control
-- ⬜ Real-time status display on device
-- ⬜ Temperature, jets, and light status visualization
+- Real-time spa monitoring via Home Assistant (encrypted ESPHome API, no MQTT broker required)
+- Climate / thermostat with current and target temperature
+- Single massage pump as a `fan` entity (more stable than `switch` on BP-series boards)
+- Spa light as a switch
+- Filter cycle 1 + 2 configuration — read + write from HA
+- Spa time read + write; **automatic time sync from HA on boot** (Balboa has no battery-backed RTC; resets to 12:00 after power loss)
+- Fault log diagnostics: fault code/total/current/days-ago, fault message, fault log time, request-fault-log button
+- Heartbeat & status: `connected` and `highrange` binary sensors
+- Reminder text + component firmware version exposed
+- WiFi diagnostics (signal, IP, SSID, MAC, uptime)
+- OTA firmware updates (password-protected)
 
-### 📡 Enhanced MQTT Features
-- ⬜ Home Assistant MQTT discovery (currently disabled for manual setup)
-- ⬜ Additional sensor data publishing
-- ⬜ MQTT-based configuration updates
-- ⬜ Advanced automation triggers
+### 📋 Todo
+
+- ⬜ M5Tough TFT touch UI for local control
+- ⬜ Home Assistant blueprints / dashboard examples
+- ⬜ Investigate switching to [`jhenkens/esphome-balboa-spa`](https://github.com/jhenkens/esphome-balboa-spa) once it's compatible with current ESPHome (currently breaks due to a removed `UNIT_FAHRENHEIT` constant) — its central command-retry queue should improve toggle reliability further.
+
+## 🧩 Software
+
+- **Component:** [`brianfeucht/esphome-balboa-spa`](https://github.com/brianfeucht/esphome-balboa-spa) — pulled as an `external_components` source.
+- **Integration:** ESPHome native API to Home Assistant (encrypted). MQTT is no longer used.
+- **Time:** `time: homeassistant` pulls time from HA; `on_boot` waits 15 s and presses a `sync_time` button to push the current time to the spa.
+
+## 🚀 Getting started
+
+### Prerequisites
+
+- ESPHome installed (`pip install esphome` or `uv tool install esphome`)
+- M5Tough + Extension Board + U034 RS485 Unit, Grove cable in the **UART** slot
+- 4-wire cable spliced to spa J34 / J35 with the topside panel still connected on the other port
+- Wi-Fi credentials and Home Assistant for the API + time
+
+### Configure secrets
+
+Copy `secrets_template.yaml` → `secrets.yaml` and fill in:
+
+- `device_name`, `friendly_name`
+- `wifi_ssid`, `wifi_password`
+- `api_encryption_key` (generate with `esphome wizard` or any 32-byte base64 value)
+- `ota_password`
+
+### Compile and flash
+
+```bash
+# Validate the YAML
+esphome config esphome-m5tough-balboa-spa.yaml
+
+# First time — over USB (M5Tough connected via USB-C)
+esphome run esphome-m5tough-balboa-spa.yaml --device COMx     # Windows
+esphome run esphome-m5tough-balboa-spa.yaml --device /dev/ttyUSB0  # Linux/Mac
+
+# Subsequent updates — over the air
+esphome run esphome-m5tough-balboa-spa.yaml --device <hostname-or-ip>.local
+
+# Tail logs
+esphome logs esphome-m5tough-balboa-spa.yaml --device <hostname-or-ip>.local
+```
+
+### Add to Home Assistant
+
+After the device is on Wi-Fi, HA's ESPHome integration will auto-discover it. Provide the encryption key from `secrets.yaml` when prompted.
 
 ## 🔧 Troubleshooting
 
-### 🔌 RS485 Communication Issues
-- **Check Physical Connections**: Ensure RS485 Unit is properly connected to Grove Port A
-  - TX: GPIO 32
-  - RX: GPIO 33  
-  - A/B lines connected to spa system
-- **Verify Baud Rate**: Confirm 115200 baud rate in ESPHome configuration
-- **Check Polarity**: Ensure proper A/B line polarity (swap if no communication)
-- **Monitor Logs**: Look for CRC errors or connection timeouts
+Most issues observed during this build are physical-layer.
 
-### 🌐 Web Interface Issues
-- **Network Connectivity**: Verify M5Tough has WiFi connection
-- **IP Address**: Check device logs for assigned IP address
-- **Firewall**: Ensure no firewall blocking ESPHome web interface
-- **Browser Cache**: Clear cache if interface appears stale
+| Symptom on M5             | Symptom on panel | Root cause                                                                       |
+|---------------------------|------------------|-----------------------------------------------------------------------------------|
+| 0 frames received         | Normal           | Cable in **GPIO** slot — pin 3 = GPIO 36 (input-only), TX never reaches U034 DI   |
+| 0 frames received         | NO COMM          | Topside panel unplugged to make room — keep it connected, use the *other* main port |
+| 0 frames received         | Normal           | Wires not on data pair — e.g. mapped to GND/12V instead of pins 2/3              |
+| Garbled CRC errors        | NO COMM          | A/B reversed — swap them at the U034                                              |
+| 0 frames, panel works     | —                | U034 GND not tied (no common reference)                                           |
+| Boot loop on Wi-Fi connect| n/a              | A `restart` button entity is being externally pressed (HA automation or stale MQTT command); we removed it from the YAML |
 
-### 📊 ESPHome Logs and Monitoring
+**Counter-intuitive lesson:** silence ≠ polarity bug. A/B reversed produces *garbled* bytes. Pure silence almost always means wrong pins or a dead/ungrounded transceiver.
 
-Monitor device operation with:
-```bash
-esphome logs esphome-m5tough-balboa-spa.yaml --device 192.168.1.xxx
+## 📁 Project structure
+
+```
+├── esphome-m5tough-balboa-spa.yaml    # Main ESPHome configuration
+├── secrets_template.yaml              # Template for secrets.yaml
+├── secrets.yaml                       # Local secrets (gitignored)
+├── README.md                          # This file
+└── documentation/                     # Photos / diagrams
 ```
 
-Watch for:
-- RS485 connection status updates  
-- Temperature reading success/failures
-- CRC error messages
-- Status change notifications
-- WiFi connection status
-- MQTT connection and authentication status
-- LWT message publishing
+## 🙏 Credits and references
 
-### 📡 MQTT Troubleshooting
+Builds on years of community work decoding the Balboa panel protocol:
 
-#### ❌ No MQTT Communication
-- **Verify Broker**: Ensure MQTT broker is running and accessible
-- **Check Credentials**: Verify username/password in `secrets.yaml`
-- **Network Access**: Confirm device can reach broker IP/port
-- **Topic Structure**: Verify topic paths match the documented format
-
-#### 📊 Monitor MQTT Traffic
-```bash
-# Subscribe to all device topics
-mosquitto_sub -h YOUR_BROKER_IP -u YOUR_USERNAME -P YOUR_PASSWORD -t "home/m5tough-balboa-spa/#"
-
-# Monitor LWT status
-mosquitto_sub -h YOUR_BROKER_IP -u YOUR_USERNAME -P YOUR_PASSWORD -t "home/m5tough-balboa-spa/LWT"
-```
-
-## 🔧 Technical Details
-
-### 📍 GPIO Pin Assignment (M5Tough)
-- **Grove Port A TX**: GPIO 32 (connected to RS485 Unit)
-- **Grove Port A RX**: GPIO 33 (connected to RS485 Unit)
-- **Display Interface**: Internal TFT connection (not yet utilized)
-- **Touch Screen**: Internal touch controller (not yet utilized)
-
-### ⚙️ ESPHome Configuration Highlights
-- **Platform**: ESP32 with M5Tough board definition
-- **UART Configuration**: Hardware serial for reliable RS485 communication
-- **Balboa Component**: Official ESPHome Balboa integration
-- **OTA Updates**: Over-the-air firmware updates enabled
-
-## 🙏 Credits and References
-
-This project builds upon excellent work from the ESPHome community:
-- **[ESPHome Balboa Spa (Dakoriki)](https://github.com/Dakoriki/ESPHome-Balboa-Spa)**
-- **[ESPHome Balboa Spa (brianfeucht)](https://github.com/brianfeucht/ESPHome-Balboa-Spa)** 
-- **[ESPHome Balboa Spa (mhetzi)](https://github.com/mhetzi/esphome-balboa-spa)** 
-- **Protocol Documentation**: ESPHome Balboa component documentation
-- **Hardware Platform**: M5Stack M5Tough ESP32 development board
-- **Framework**: ESPHome home automation platform
-
+- **[brianfeucht/esphome-balboa-spa](https://github.com/brianfeucht/esphome-balboa-spa)** — the ESPHome component this project consumes.
+- **[jhenkens/esphome-balboa-spa](https://github.com/jhenkens/esphome-balboa-spa)** — rewritten fork with a typed message layer and central command-retry queue (currently incompatible with ESPHome 2026.4.0).
+- **[ccutrer/balboa_worldwide_app](https://github.com/ccutrer/balboa_worldwide_app/wiki)** — protocol & physical-layer wiki, the canonical reference for connector pinouts.
+- **[Dakoriki/ESPHome-Balboa-Spa](https://github.com/Dakoriki/ESPHome-Balboa-Spa)** — earlier ESPHome integration.
+- **[mhetzi/esphome-balboa-spa](https://github.com/mhetzi/esphome-balboa-spa)** — alternative maintained fork.
+- **[Reddit /r/hottub: "Finally made my tub smart"](https://www.reddit.com/r/hottub/comments/1rbvkhu/)** — practical wiring writeup that helped resolve the J34 pin mapping during this build.
+- **[Balboa BP6013G1 tech sheet (PN 56611-08)](https://www.balboawater.com/wp-content/uploads/2025/03/BP6013G1-Current.pdf)** — official wiring diagram showing J34/J35 as MAIN panel ports.
+- **[M5Tough Extension Board schematic](https://m5stack-doc.oss-cn-shenzhen.aliyuncs.com/647/Tough-Ext-Board-Schematics-PDF.pdf)** — definitive slot-to-GPIO mapping.
+- **[Original repo by dhWasabi](https://github.com/dhWasabi/M5Tough-BalboaSpa-esphome)** — the M5Tough-specific starting point.
