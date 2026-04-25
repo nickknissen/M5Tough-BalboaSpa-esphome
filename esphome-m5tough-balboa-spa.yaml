@@ -26,48 +26,16 @@ logger:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-  
-  # Enable fallback hotspot with password from secrets
-  ap:
-    ssid: "M5Tough-Balboa-Spa"
-    password: !secret fallback_hotspot_password
 
 captive_portal:
 
-# Standalone web server with authentication from secrets
-web_server:
-  port: 80
-  include_internal: true
-  local: true
-  auth:
-    username: !secret web_username
-    password: !secret web_password
+api:
+  encryption:
+    key: !secret api_encryption_key
 
-# MQTT configuration instead of API
-mqtt:
-  broker: !secret mqtt_broker
-  port: !secret mqtt_port
-  username: !secret mqtt_username
-  password: !secret mqtt_password
-  discovery: false
-  discovery_retain: false
-  topic_prefix: home/m5tough-balboa-spa
-  # Birth message (sent when device connects) 
-  birth_message:
-    topic: home/m5tough-balboa-spa/LWT
-    payload: "online"
-    retain: true
-  # Will message (sent when device disconnects unexpectedly)
-  will_message:
-    topic: home/m5tough-balboa-spa/LWT
-    payload: "offline"
-    retain: true
-
-# OTA updates with optional password protection
 ota:
   - platform: esphome
-    # Uncomment the next line and set ota_password in secrets.yaml for password protection
-    # password: !secret ota_password
+    password: !secret ota_password
 
 # OPTIMIZED UART configuration for better CRC handling
 uart:
@@ -233,11 +201,9 @@ text_sensor:
     ip_address:
       name: "IP Address"
       entity_category: diagnostic
-      update_interval: 60s
     ssid:
       name: "Connected SSID"
       entity_category: diagnostic
-      update_interval: 60s
     mac_address:
       name: "MAC Address"
       entity_category: diagnostic
