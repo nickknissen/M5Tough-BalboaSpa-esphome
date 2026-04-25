@@ -143,6 +143,16 @@ sensor:
       filters:
         - throttle: 5s
 
+    # Fault log diagnostics
+    fault_code:
+      name: "Fault Code"
+    fault_total_entries:
+      name: "Fault Total Entries"
+    fault_current_entry:
+      name: "Fault Current Entry"
+    fault_days_ago:
+      name: "Fault Days Ago"
+
   # OPTIMIZED Template sensors with reduced update frequency
   - platform: template
     name: "Spa Current Temperature"
@@ -209,6 +219,10 @@ text_sensor:
       name: "Filter 1 Config"
     filter2_config:
       name: "Filter 2 Config"
+    fault_message:
+      name: "Fault Message"
+    fault_log_time:
+      name: "Fault Log Time"
 
   - platform: wifi_info
     ip_address:
@@ -251,6 +265,8 @@ button:
     sync_time:
       id: spa_sync_time_button
       name: "Sync Spa Time"
+    request_fault_log:
+      name: "Request Fault Log"
 
 interval:
   - interval: 60s
