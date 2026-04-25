@@ -1,6 +1,4 @@
-# M5Tough Balboa Spa Monitor - Optimized Standalone ESPHome Configuration with MQTT
-# Reduced CRC errors and improved communication stability
-# Uses MQTT for Home Assistant integration instead of API
+# M5Tough Balboa Spa Monitor — ESPHome configuration
 
 esphome:
   name: !secret device_name
@@ -58,13 +56,8 @@ uart:
   data_bits: 8
   parity: NONE
   stop_bits: 1
-  # Increased buffer sizes for better message handling
   rx_buffer_size: 1024
-  # Enable hardware flow control if available
-  # rts_pin: GPIO4  # Uncomment if you have RTS connected
-  # cts_pin: GPIO5  # Uncomment if you have CTS connected
 
-# External Balboa Spa component
 external_components:
   - source:
       type: git
@@ -72,7 +65,6 @@ external_components:
       ref: main
     components: [balboa_spa]
 
-# OPTIMIZED Balboa Spa component configuration
 balboa_spa:
   id: spa
   spa_temp_scale: C
@@ -116,26 +108,21 @@ fan:
 sensor:
   - platform: balboa_spa
     balboa_spa_id: spa
-    
-    # Heat state
+
     heatstate:
       name: "Spa Heat State"
       id: spa_heat_state
       icon: "mdi:thermometer"
-      # Add filtering for stable readings
       filters:
         - throttle: 2s
-    
-    # Circulation pump
+
     circulation:
       name: "Spa Circulation"
       id: spa_circulation
       icon: "mdi:rotate-3d-variant"
       filters:
         - throttle: 5s
-    
-   
-    # Rest mode
+
     restmode:
       name: "Spa Rest Mode"
       id: spa_rest_mode
@@ -153,7 +140,7 @@ sensor:
     fault_days_ago:
       name: "Fault Days Ago"
 
-  # OPTIMIZED Template sensors with reduced update frequency
+  # Template sensors derived from the climate entity (brianfeucht has no native current/target sensors)
   - platform: template
     name: "Spa Current Temperature"
     id: spa_current_temp
@@ -161,7 +148,6 @@ sensor:
     device_class: "temperature"
     state_class: "measurement"
     accuracy_decimals: 1
-    # Reduced update frequency to minimize communication conflicts
     update_interval: 30s
     lambda: |-
       if (id(spa_thermostat).current_temperature != NAN) {
@@ -170,7 +156,6 @@ sensor:
         return {};
       }
     filters:
-      # Add filtering to smooth out readings
       - filter_out: nan
       - throttle: 10s
 
@@ -192,7 +177,6 @@ sensor:
       - filter_out: nan
       - throttle: 10s
 
-  # System sensors with reduced frequency
   - platform: wifi_signal
     name: "WiFi Signal"
     update_interval: 120s
