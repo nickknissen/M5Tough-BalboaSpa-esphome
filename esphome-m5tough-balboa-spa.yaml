@@ -212,19 +212,7 @@ text_sensor:
     name: "ESPHome Version"
     entity_category: diagnostic
 
-# Restart button
-button:
-  - platform: restart
-    name: "Restart"
-    id: spa_restart_btn
-    entity_category: diagnostic
-
-# Add connection monitoring and automatic recovery
 interval:
   - interval: 60s
     then:
       - logger.log: "Spa communication check - monitoring for stability"
-  - interval: 48h
-    then:
-      - logger.log: "Auto-restarting device for stability"
-      - button.press:  spa_restart_btn
