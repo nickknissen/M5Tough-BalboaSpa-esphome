@@ -78,27 +78,10 @@ climate:
       max_temperature: 40 °C
       temperature_step: 0.5 °C
 
-# Switches for spa controls with debouncing
+# Light stays as a switch — only jets had instability
 switch:
   - platform: balboa_spa
     balboa_spa_id: spa
-    jet1:
-      name: "Spa Jet 1"
-      id: spa_jet1
-      icon: "mdi:turbine"
-      # Add turn-on/off actions for better control
-      on_turn_on:
-        - logger.log: "Jet 1 turned ON"
-      on_turn_off:
-        - logger.log: "Jet 1 turned OFF"
-    jet2:
-      name: "Spa Jet 2"
-      id: spa_jet2
-      icon: "mdi:turbine"
-      on_turn_on:
-        - logger.log: "Jet 2 turned ON"
-      on_turn_off:
-        - logger.log: "Jet 2 turned OFF"
     light:
       name: "Spa Light"
       id: spa_light
@@ -107,6 +90,15 @@ switch:
         - logger.log: "Light turned ON"
       on_turn_off:
         - logger.log: "Light turned OFF"
+
+# Single massage pump exposed as a fan — switch platform caused on/off oscillation on BP21 boards
+fan:
+  - platform: balboa_spa
+    balboa_spa_id: spa
+    jet_1:
+      name: "Spa Jet"
+      id: spa_jet
+      discard_updates: 20
 
 # Core spa sensors with reduced update frequency
 sensor:
