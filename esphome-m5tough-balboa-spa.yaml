@@ -230,6 +230,10 @@ text_sensor:
       name: "Fault Message"
     fault_log_time:
       name: "Fault Log Time"
+    reminder:
+      name: "Reminder"
+    component_version:
+      name: "Component Version"
 
   - platform: wifi_info
     ip_address:
