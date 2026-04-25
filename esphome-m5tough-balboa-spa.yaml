@@ -6,6 +6,18 @@ esphome:
   name: !secret device_name
   friendly_name: !secret friendly_name
   build_path: .build/esphome_m5tough_balboa_spa
+  on_boot:
+    priority: -100
+    then:
+      # Wait for HA time sync, then push current time to spa (Balboa has no RTC)
+      - delay: 15s
+      - button.press: spa_sync_time_button
+
+# Pull time from Home Assistant so we can push it to the spa on boot
+time:
+  - platform: homeassistant
+    id: ha_time
+    timezone: "Europe/Copenhagen"
 
 esp32:
   board: m5stack-core2
@@ -203,6 +215,13 @@ text_sensor:
   - platform: version
     name: "ESPHome Version"
     entity_category: diagnostic
+
+button:
+  - platform: balboa_spa
+    balboa_spa_id: spa
+    sync_time:
+      id: spa_sync_time_button
+      name: "Sync Spa Time"
 
 interval:
   - interval: 60s
